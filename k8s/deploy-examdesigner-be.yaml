@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: examdesignerbe
+  namespace: edaas
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: examdesignerbe
+  template:
+    metadata:
+      labels:
+        app: examdesignerbe
+    spec:
+      containers:
+      - image: edaascontainerregistry.azurecr.cn/examdesignerbe:PreVA10.0.2
+        name: examdesignerbe
+        env:   
+          - name: REDIS_SERVER
+            value: "protocolcache-service.edaas.svc.cluster.local" 
+          - name: REDIS_PORT
+            value: "6379" 
+          - name: REPOSITORY_SERVER
+            value: "protocolrepositoryservicenextgen-service.edaas.svc.cluster.local" 
+          - name: REPOSITORY_SERVER_PORT
+            value: "9085" 
+          - name: PARAMETER_SERVER
+            value: "protocolparameterservice-service.edaas.svc.cluster.local" 
+          - name: PARAMETER_SERVER_PORT
+            value: "9086" 
+          - name: MODEL_TYPE
+            value: "P60A"
+        ports:
+        - containerPort: 9084
+          protocol: TCP
+        livenessProbe:
+          tcpSocket:
+            host: protocolparameterservice-service.edaas.svc.cluster.local
+            port: 9086
+          initialDelaySeconds: 15
+          periodSeconds: 10
+      imagePullSecrets:
+        - name: edaasacrcred
+      nodeSelector:
+        kubernetes.io/os: windows
+      tolerations:
+        - key: "OS"
+          operator: "Equal"
+          value: "Windows"
+          effect: "NoSchedule"
+---
+#Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: examdesignerbe-service  
+  namespace: edaas
+  labels:    
+    app: examdesignerbe
+spec:    
+  selector:    
+    app: examdesignerbe
+  ports:
+  - protocol: TCP    
+    port: 9084        
+    targetPort: 9084
+  clusterIP: 172.21.1.60     #only for smallk8s

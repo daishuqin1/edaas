@@ -1,0 +1,8 @@
+{
+	"auths": {
+		"edaascontainerregistry.azurecr.cn": {
+			"username": "edaascontainerregistry",
+			"password": "f7O8rZTJ/pSE2R0GhYnVkS8MM2mFh11t"
+		}
+	}
+}

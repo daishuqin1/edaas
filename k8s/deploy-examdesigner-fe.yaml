@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: examdesignerfe
+  namespace: edaas
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: examdesignerfe
+  template:
+    metadata:
+      labels:
+        app: examdesignerfe
+    spec:
+      containers:
+      - image: edaascontainerregistry.azurecr.cn/examdesignerfe:PreVA10.0.2
+        name: examdesignerfe
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+      imagePullSecrets:
+        - name: edaasacrcred
+      nodeSelector:
+        kubernetes.io/os: linux
+      tolerations:
+        - key: "OS"
+          operator: "Equal"
+          value: "linux"
+          effect: "NoSchedule"
+---
+#Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: examdesignerfe-service  
+  namespace: edaas
+  labels:    
+    app: examdesignerfe
+spec:    
+  selector:    
+    app: examdesignerfe
+  ports:
+  - protocol: TCP    
+    port: 8080        
+    targetPort: 8080 
+  clusterIP: 172.21.1.59   # only for smallk8s

@@ -1,0 +1,36 @@
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  labels:
+    app.kubernetes.io/component: controller
+  name: nginx
+  annotations:
+    ingressclass.kubernetes.io/is-default-class: "true"
+spec:
+  controller: k8s.io/ingress-nginx
+---
+#Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: examdesigner
+  namespace: edaas  
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: examdesignerfe-service
+                port:
+                  number: 8080
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: examdesignerbe-service
+                port:
+                  number: 9084

@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: protocolparameterservice
+  namespace: edaas
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: protocolparameterservice
+  template:
+    metadata:
+      labels:
+        app: protocolparameterservice
+    spec:
+      containers:
+      - image: edaascontainerregistry.azurecr.cn/protocolparameterservice:PreVA10.0.2
+        name: protocolparameterservice
+        env:   
+          - name: REDIS_SERVER
+            value: "protocolcache-service.edaas.svc.cluster.local" 
+          - name: REDIS_PORT
+            value: "6379" 
+          - name: MODEL_TYPE
+            value: "P60A"
+        ports:
+        - containerPort: 9086
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 4000m
+          requests:
+            cpu: 1000m
+      imagePullSecrets:
+        - name: edaasacrcred
+      nodeSelector:
+        kubernetes.io/os: windows
+      tolerations:
+        - key: "OS"
+          operator: "Equal"
+          value: "Windows"
+          effect: "NoSchedule"
+---
+#Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: protocolparameterservice-service 
+  namespace: edaas
+  labels:    
+    app: protocolparameterservice
+spec:    
+  selector:    
+    app: protocolparameterservice
+  ports:
+  - protocol: TCP    
+    port: 9086        
+    targetPort: 9086  
+  clusterIP: 172.21.1.61   # only for smallk8s
+---
+#HorizontalPodAutoscaler
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: protocolparameterservice-autoscaler
+  namespace: edaas
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: protocolparameterservice
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+  - resource:
+      name: cpu
+      target:
+        averageUtilization: 80
+        type: Utilization
+    type: Resource

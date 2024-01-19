@@ -1,0 +1,54 @@
+#Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: protocoldatabase
+  namespace: edaas
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: protocoldatabase
+  template:
+    metadata:
+      labels:
+        app: protocoldatabase
+    spec:
+      volumes:
+        - name: protocoldatabase-pv-storage
+          persistentVolumeClaim:
+             claimName: protocoldatabase-pv-claim
+      containers:
+      - image: edaascontainerregistry.azurecr.cn/protocoldatabase:PreVA10.0.2
+        name: protocoldatabase
+        env:
+          - name: MYSQL_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: dbsecret
+                key: mysqlrootpassword
+        ports:
+          - containerPort: 3306
+            protocol: TCP
+        volumeMounts:
+           - name: protocoldatabase-pv-storage
+             mountPath: /var/lib/mysql
+      imagePullSecrets:
+        - name: edaasacrcred
+      nodeSelector:
+        kubernetes.io/os: linux
+---
+#Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: protocoldatabase-service
+  namespace: edaas
+spec:
+  selector:
+    app: protocoldatabase
+  ports:
+    - protocol: TCP
+      port: 3306
+      targetPort: 3306
+  clusterIP: 172.21.0.63   # only for smallk8s

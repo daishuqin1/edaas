@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: protocolrepositoryservicenextgen
+  namespace: edaas
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: protocolrepositoryservicenextgen
+  template:
+    metadata:
+      labels:
+        app: protocolrepositoryservicenextgen
+    spec:
+      containers:
+      - image: edaascontainerregistry.azurecr.cn/protocolrepositoryservicenextgen:PreVA10.0.2
+        name: protocolrepositoryservicenextgen
+        env:     
+          - name: PROTOCOL_DB_CONNECTION
+            valueFrom:
+              secretKeyRef:
+                name: dbsecret
+                key: dbconnection
+          - name: REDIS_SERVER
+            value: "protocolcache-service.edaas.svc.cluster.local" 
+          - name: REDIS_PORT
+            value: "6379" 
+        ports:
+        - containerPort: 9085
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 4000m
+          requests:
+            cpu: 1000m
+      imagePullSecrets:
+        - name: edaasacrcred
+      nodeSelector:
+        kubernetes.io/os: linux
+      tolerations:
+        - key: "OS"
+          operator: "Equal"
+          value: "linux"
+          effect: "NoSchedule"
+---
+#Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: protocolrepositoryservicenextgen-service   
+  namespace: edaas
+  labels:    
+    app: protocolrepositoryservicenextgen
+spec:    
+  selector:    
+    app: protocolrepositoryservicenextgen
+  ports:
+  - protocol: TCP    
+    port: 9085        
+    targetPort: 9085  
+  clusterIP: 172.21.0.62  # only for smallk8s
+---
+#HorizontalPodAutoscaler
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: protocolrepositoryservicenextgen-autoscaler
+  namespace: edaas
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: protocolrepositoryservicenextgen
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+  - resource:
+      name: cpu
+      target:
+        averageUtilization: 80
+        type: Utilization
+    type: Resource

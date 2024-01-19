@@ -1,0 +1,26 @@
+namespace: edaas
+generatorOptions:
+  disableNameSuffixHash: true
+secretGenerator:
+  - name: edaasacrcred
+    files:
+      - .dockerconfigjson=edaasacrcred.json
+    type: kubernetes.io/dockerconfigjson
+patches:
+  - target:
+      kind: Deployment
+    patch: |-
+      - op: add
+        path: /spec/template/spec/imagePullSecrets
+        value: [{ name: edaasacrcred }]
+resources:
+- namespace-examdesigner.yaml
+- dbsecret.yaml
+- deploy-datapersistent.yaml
+- deploy-protocolcache.yaml
+- deploy-protocoldatabase.yaml
+- deploy-examdesigner-protocolrepositoryservice.yaml
+- deploy-examdesigner-protocolparameterservice.yaml
+- deploy-examdesigner-be.yaml
+- deploy-examdesigner-fe.yaml
+
