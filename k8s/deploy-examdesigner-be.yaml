@@ -34,12 +34,11 @@ spec:
         ports:
         - containerPort: 9084
           protocol: TCP
-        livenessProbe:
-          tcpSocket:
-            host: protocolparameterservice-service.edaas.svc.cluster.local
-            port: 9086
-          initialDelaySeconds: 15
-          periodSeconds: 10
+        resources:
+          limits:
+            memory: 2048Mi
+          requests:
+            memory: 512Mi
       imagePullSecrets:
         - name: edaasacrcred
       nodeSelector:
@@ -66,3 +65,24 @@ spec:
     port: 9084        
     targetPort: 9084
   clusterIP: 172.21.1.60     #only for smallk8s
+---
+#HorizontalPodAutoscaler
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: examdesignerbe-autoscaler
+  namespace: edaas
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: examdesignerbe
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: AverageValue
+        averageValue: 1024Mi 
